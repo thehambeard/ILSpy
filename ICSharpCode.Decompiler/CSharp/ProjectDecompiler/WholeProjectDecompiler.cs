@@ -706,8 +706,8 @@ namespace ICSharpCode.Decompiler.CSharp.ProjectDecompiler
 						b.Append('-');
 				}
 			}
-			if (b.Length == 0)
-				b.Append('-');
+			//if (b.Length == 0)
+			//	b.Append('-');
 			string name = b.ToString();
 			if (extension != null)
 			{

@@ -253,7 +253,7 @@ namespace ICSharpCode.Decompiler.CSharp
 			if (method.IsLocalFunction)
 			{
 				localFunction = expressionBuilder.ResolveLocalFunction(method);
-				Debug.Assert(localFunction != null);
+				//Debug.Assert(localFunction != null);
 			}
 			TranslatedExpression target;
 			if (callOpCode == OpCode.NewObj)

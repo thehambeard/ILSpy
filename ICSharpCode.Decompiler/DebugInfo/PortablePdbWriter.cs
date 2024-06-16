@@ -23,6 +23,7 @@ using System.Diagnostics;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
+using System.Reflection;
 using System.Reflection.Metadata;
 using System.Reflection.Metadata.Ecma335;
 using System.Reflection.PortableExecutable;
@@ -38,6 +39,8 @@ using ICSharpCode.Decompiler.IL;
 using ICSharpCode.Decompiler.Metadata;
 using ICSharpCode.Decompiler.TypeSystem;
 using ICSharpCode.Decompiler.Util;
+
+using static ICSharpCode.Decompiler.IL.ControlFlow.SwitchDetection;
 
 namespace ICSharpCode.Decompiler.DebugInfo
 {
@@ -66,13 +69,14 @@ namespace ICSharpCode.Decompiler.DebugInfo
 		}
 
 		public static void WritePdb(
-			PEFile file,
-			CSharpDecompiler decompiler,
-			DecompilerSettings settings,
-			Stream targetStream,
-			bool noLogo = false,
-			BlobContentId? pdbId = null,
-			IProgress<DecompilationProgress> progress = null)
+		PEFile file,
+		CSharpDecompiler decompiler,
+		DecompilerSettings settings,
+		Stream targetStream,
+		bool noLogo = false,
+		BlobContentId? pdbId = null,
+		IProgress<DecompilationProgress> progress = null,
+		string namePrefix = "")
 		{
 			MetadataBuilder metadata = new MetadataBuilder();
 			MetadataReader reader = file.Metadata;
@@ -92,7 +96,7 @@ namespace ICSharpCode.Decompiler.DebugInfo
 				string ns = settings.UseNestedDirectoriesForNamespaces
 					? WholeProjectDecompiler.CleanUpPath(typeName.Namespace)
 					: WholeProjectDecompiler.CleanUpDirectoryName(typeName.Namespace);
-				return Path.Combine(ns, WholeProjectDecompiler.CleanUpFileName(typeName.Name) + ".cs");
+				return Path.Combine(namePrefix, ns, WholeProjectDecompiler.CleanUpFileName(typeName.Name) + ".cs");
 			}
 
 			var sourceFiles = reader.GetTopLevelTypeDefinitions().Where(t => IncludeTypeWhenGeneratingPdb(file, t, settings)).GroupBy(BuildFileNameFromTypeName).ToList();
@@ -239,8 +243,9 @@ namespace ICSharpCode.Decompiler.DebugInfo
 				pdbId = new BlobContentId(portable.Guid, debugDir.Stamp);
 			}
 
-			PortablePdbBuilder serializer = new PortablePdbBuilder(metadata, GetRowCounts(reader), entrypointHandle, blobs => pdbId.Value);
 			BlobBuilder blobBuilder = new BlobBuilder();
+			PortablePdbBuilder serializer = new PortablePdbBuilder(metadata, GetRowCounts(reader), entrypointHandle, blobs => pdbId.Value);
+			
 			serializer.Serialize(blobBuilder);
 			blobBuilder.WriteContentTo(targetStream);
 

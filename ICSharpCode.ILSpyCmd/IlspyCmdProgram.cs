@@ -144,6 +144,10 @@ Examples:
 					{
 						string projectFileName = Path.Combine(outputDirectory, Path.GetFileNameWithoutExtension(InputAssemblyNames[0]) + ".csproj");
 						DecompileAsProject(InputAssemblyNames[0], projectFileName);
+
+						if(CreateDebugInfoFlag)
+							GeneratePdbForAssembly(InputAssemblyNames[0], Path.Combine(outputDirectory, Path.GetFileNameWithoutExtension(InputAssemblyNames[0]) + ".pdb"), app, outputDirectory);
+
 						return 0;
 					}
 					var projects = new List<ProjectItem>();
@@ -155,6 +159,7 @@ Examples:
 						projects.Add(new ProjectItem(projectFileName, projectId.PlatformName, projectId.Guid, projectId.TypeGuid));
 					}
 					SolutionCreator.WriteSolutionFile(Path.Combine(outputDirectory, Path.GetFileNameWithoutExtension(outputDirectory) + ".sln"), projects);
+					
 					return 0;
 				}
 				else
@@ -225,7 +230,7 @@ Examples:
 						pdbFileName = Path.ChangeExtension(fileName, ".pdb");
 					}
 
-					return GeneratePdbForAssembly(fileName, pdbFileName, app);
+					return GeneratePdbForAssembly(fileName, pdbFileName, app, outputDirectory);
 				}
 				else if (DumpPackageFlag)
 				{
@@ -313,6 +318,7 @@ Examples:
 				resolver.AddSearchDirectory(path);
 			}
 			var decompiler = new WholeProjectDecompiler(GetSettings(module), resolver, null, resolver, TryLoadPDB(module));
+			decompiler.ProgressIndicator = new ProgressReporter();
 			using (var projectFileWriter = new StreamWriter(File.OpenWrite(projectFileName)))
 				return decompiler.DecompileProject(module, Path.GetDirectoryName(projectFileName), projectFileWriter);
 		}
@@ -320,7 +326,7 @@ Examples:
 		int Decompile(string assemblyFileName, TextWriter output, string typeName = null)
 		{
 			CSharpDecompiler decompiler = GetDecompiler(assemblyFileName);
-
+			
 			if (typeName == null)
 			{
 				output.Write(decompiler.DecompileWholeModuleAsString());
@@ -333,13 +339,13 @@ Examples:
 			return 0;
 		}
 
-		int GeneratePdbForAssembly(string assemblyFileName, string pdbFileName, CommandLineApplication app)
+		int GeneratePdbForAssembly(string assemblyFileName, string pdbFileName, CommandLineApplication app, string namePrefix = "")
 		{
 			var module = new PEFile(assemblyFileName,
 				new FileStream(assemblyFileName, FileMode.Open, FileAccess.Read),
 				PEStreamOptions.PrefetchEntireImage,
 				metadataOptions: MetadataReaderOptions.None);
-
+			
 			if (!PortablePdbWriter.HasCodeViewDebugDirectoryEntry(module))
 			{
 				app.Error.WriteLine($"Cannot create PDB file for {assemblyFileName}, because it does not contain a PE Debug Directory Entry of type 'CodeView'.");
@@ -349,7 +355,8 @@ Examples:
 			using (FileStream stream = new FileStream(pdbFileName, FileMode.OpenOrCreate, FileAccess.Write))
 			{
 				var decompiler = GetDecompiler(assemblyFileName);
-				PortablePdbWriter.WritePdb(module, decompiler, GetSettings(module), stream);
+				var progess = new ProgressReporter();
+				PortablePdbWriter.WritePdb(module, decompiler, GetSettings(module), stream, namePrefix: namePrefix, progress: progess);
 			}
 
 			return 0;

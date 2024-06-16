@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "ICSharpCode.ILSpyCmd": {
+      "commandName": "Project",
+      "commandLineArgs": "-o \"C:\\Program Files (x86)\\Steam\\steamapps\\common\\Pathfinder Second Adventure Debug\\Wrath_Data\\Managed\\Owlcat.Runtime.UI\" -p -genpdb -r \"C:\\Program Files (x86)\\Steam\\steamapps\\common\\Pathfinder Second Adventure Debug\\Wrath_Data\\Managed\" \"C:\\Program Files (x86)\\Steam\\steamapps\\common\\Pathfinder Second Adventure Debug\\Wrath_Data\\Managed\\Owlcat.Runtime.UI.dll\""
+    }
+  }
+}
